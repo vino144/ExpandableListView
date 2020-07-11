@@ -1,15 +1,13 @@
 package com.eriumyedu.task
 
 import android.graphics.BitmapFactory
-import android.location.Address
-import android.location.Geocoder
 import android.os.Bundle
 import android.widget.ExpandableListAdapter
 import android.widget.ExpandableListView
-import android.widget.ExpandableListView.OnGroupExpandListener
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
-import com.eriumyedu.task.pojo.*
+import com.eriumyedu.task.pojo.Country
+import com.eriumyedu.task.pojo.Data
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.OnMapReadyCallback
@@ -20,46 +18,39 @@ import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.MarkerOptions
 import com.google.gson.Gson
 import com.google.gson.JsonSyntaxException
-import com.google.gson.reflect.TypeToken
-import okhttp3.ResponseBody
 import org.json.JSONObject
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
-import java.io.IOException
-import java.lang.reflect.Type
-import java.util.*
-import kotlin.collections.ArrayList
-import kotlin.collections.HashMap
 
 
 class MainActivity : AppCompatActivity(), OnMapReadyCallback {
-    internal var expandableListView: ExpandableListView? = null
-    internal var adapter: ExpandableListAdapter? = null
-    internal var titleList: List<String> ? = null
-    internal val countrylist = ArrayList<String>()
-    internal var statelist = ArrayList<String>()
-    internal val citylist = ArrayList<String>()
+    private var expandableListView: ExpandableListView? = null
+    private var adapter: ExpandableListAdapter? = null
+    private var titleList: List<String> ? = null
+    private val countrylist = ArrayList<String>()
+    private var statelist = ArrayList<String>()
+    private val citylist = ArrayList<String>()
 
-    internal var country1=Country()
-    internal var mMineUserEntity=Data()
+    private var country1=Country()
+    private var mMineUserEntity=Data()
     private var countryname=""
     private var statename=""
     private var cityname=""
     private lateinit var googleMap: GoogleMap
 
-    val data: HashMap<String, List<String>>
+    private val data: HashMap<String, List<String>>
         get() {
             val listData = HashMap<String, List<String>>()
 
-          /*  val redmiMobiles = ArrayList<String>()
-            redmiMobiles.add("Redmi Y2")
-            redmiMobiles.add("Redmi S2")
-            redmiMobiles.add("Redmi Note 5 Pro")
-            redmiMobiles.add("Redmi Note 5")
-            redmiMobiles.add("Redmi 5 Plus")
-            redmiMobiles.add("Redmi Y1")
-            redmiMobiles.add("Redmi 3S Plus")*/
+          /*  val countrylist = ArrayList<String>()
+            countrylist.add("Redmi Y2")
+            countrylist.add("Redmi S2")
+            countrylist.add("Redmi Note 5 Pro")
+            countrylist.add("Redmi Note 5")
+            countrylist.add("Redmi 5 Plus")
+            countrylist.add("Redmi Y1")
+            countrylist.add("Redmi 3S Plus")*/
 
            /* val micromaxMobiles = ArrayList<String>()
             micromaxMobiles.add("Micromax Bharat Go")
@@ -84,9 +75,9 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
             samsungMobiles.add("Samsung Galaxy A8")
             samsungMobiles.add("Samsung Galaxy Note 4")*/
 
-            listData["country"] = countrylist
-            listData["city"] = citylist
-            listData["state"] = statelist
+            listData["CountryList"] = countrylist
+            listData["StateList"] = statelist
+            listData["CityList"] = citylist
             //listData["Samsung"] = samsungMobiles
 
             return listData
@@ -102,34 +93,65 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
         val request = RetroApicall.buildService(RetroService::class.java)
         val hashMap : HashMap<String, String> = HashMap()
 
-        hashMap.put("app_type" , "app1")
-        hashMap.put("channel_type" , "radio")
-        hashMap.put("country" , "")
+        hashMap["app_type"] = "app1"
+        hashMap["channel_type"] = "radio"
+        hashMap["country"] = ""
         val call = request.getLocatoinsdata(hashMap)
-
-
         call!!.enqueue {
-
             onResponse = {
                 // do
                 if (it.isSuccessful) {
                     try {
                         val rootJsonObject = JSONObject(it.body()!!.string())
-                        val isSucess = rootJsonObject.getString("message")
                         val data = rootJsonObject.getString("data")
                         mMineUserEntity =  Gson().fromJson(data, Data::class.java)
-                        if(mMineUserEntity!=null) {
-                            if (mMineUserEntity.getCountry() != null) {
-                                println("CHECK_RESPONSE: 0021" + mMineUserEntity.getCountry()!!.size)
-                                //val arrayList = ArrayList<Country>()
-                                for ((index, value) in mMineUserEntity.getCountry()!!.withIndex()) {
-                                    country1= Country()
-                                    country1= value!!
-                                    countrylist.add(country1.getCountryName()!!)
-                                    println("the element at $index is ${value!!.getCountryName()}")
+                        if (mMineUserEntity.getCountry() != null) {
+                            for (value in mMineUserEntity.getCountry()!!) {
+                                country1= Country()
+                                country1= value!!
+                                countrylist.add(country1.getCountryName()!!)
+                            }
+                        }
+                        countryname= mMineUserEntity.getCountry()!![0]!!.getCountryName()!!
+                        statename = mMineUserEntity.getCountry()!![0]!!.getState()!![0]!!.getStateName()!!
+                        cityname = mMineUserEntity.getCountry()!![0]!!.getState()!![0]!!.getCity()!![0]!!.getCityName()!!
+
+                        for (value in mMineUserEntity.getCountry()!!) {
+                            if (countryname == value!!.getCountryName()){
+                                val states= value.getState()
+                                for (value1 in states!!) {
+                                    statelist.clear()
+                                    statelist.add(value1!!.getStateName()!!)
+                                    (adapter as CustomExpandableListAdapter).notifyDataSetChanged()
+                                    if (statename == value1.getStateName()) {
+                                        val citys= value1.getCity()
+                                        (adapter as CustomExpandableListAdapter).notifyDataSetChanged()
+                                        for (value2 in citys!!) {
+                                            citylist.clear()
+                                            citylist.add(value2!!.getCityName()!!)
+                                            (adapter as CustomExpandableListAdapter).notifyDataSetChanged()
+                                            if (cityname == value2.getCityName()) {
+                                                val icon = BitmapDescriptorFactory.fromBitmap(BitmapFactory.decodeResource(this@MainActivity.resources, R.mipmap.ic_location))
+                                                googleMap.addMarker(
+                                                    MarkerOptions()
+                                                        .position(LatLng(value2.getLatitude()!!.toDouble(), value2.getLongitude()!!.toDouble()))
+                                                        .title("Current Location")
+                                                        .snippet(cityname)
+                                                        .icon(icon)
+                                                )
+
+                                                val cameraPosition = CameraPosition.Builder()
+                                                    .target(LatLng(value2.getLatitude()!!.toDouble(), value2.getLongitude()!!.toDouble()))
+                                                    .zoom(17f)
+                                                    .build()
+                                                googleMap.moveCamera(CameraUpdateFactory.newCameraPosition(cameraPosition))
+                                            }
+                                        }
+                                    }
                                 }
                             }
                         }
+
 
                     } catch (exception: IllegalStateException) {
                         println("CHECK_RESPONSE: 2")
@@ -159,13 +181,16 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
         if (expandableListView != null) {
             val listData = data
             titleList = ArrayList(listData.keys)
+            for (value in titleList!!) {
+            println("CHECK_TITLE :$value")
+            }
             adapter = CustomExpandableListAdapter(this, titleList as ArrayList<String>, listData)
             expandableListView!!.setAdapter(adapter)
 
-            expandableListView!!.setOnGroupExpandListener(OnGroupExpandListener { groupPosition ->
+            this.expandableListView!!.setOnGroupExpandListener { groupPosition ->
                 Toast.makeText(applicationContext, (titleList as ArrayList<String>)[groupPosition] + " List Expanded.", Toast.LENGTH_SHORT).show()
-            })
-            expandableListView!!.setOnGroupCollapseListener { groupPosition ->
+            }
+            this.expandableListView!!.setOnGroupCollapseListener { groupPosition ->
                 Toast.makeText(applicationContext, (titleList as ArrayList<String>)[groupPosition] + " List Collapsed.", Toast.LENGTH_SHORT).show()
             }
 
@@ -173,30 +198,36 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
             expandableListView!!.setOnChildClickListener { parent, v, groupPosition, childPosition, id ->
                 Toast.makeText(applicationContext, "Clicked: " + (titleList as ArrayList<String>)[groupPosition] + " -> " + listData[(titleList as ArrayList<String>)[groupPosition]]!!.get(childPosition), Toast.LENGTH_SHORT).show()
 
-                if ((titleList as ArrayList<String>)[groupPosition].equals("country")){
-                    countryname=  listData[(titleList as ArrayList<String>)[groupPosition]]!!.get(childPosition)
-
-                }else if((titleList as ArrayList<String>)[groupPosition].equals("state")){
-                    statename =listData[(titleList as ArrayList<String>)[groupPosition]]!!.get(childPosition)
-                }else{
-                    cityname =listData[(titleList as ArrayList<String>)[groupPosition]]!!.get(childPosition)
+                when {
+                    (titleList as ArrayList<String>)[groupPosition] == "CountryList" -> {
+                        countryname= listData[(titleList as ArrayList<String>)[groupPosition]]!![childPosition]
+                        expandableListView!!.collapseGroup(groupPosition );
+                    }
+                    (titleList as ArrayList<String>)[groupPosition] == "StateList" -> {
+                        statename = listData[(titleList as ArrayList<String>)[groupPosition]]!![childPosition]
+                        expandableListView!!.collapseGroup(groupPosition );
+                    }
+                    else -> {
+                        cityname = listData[(titleList as ArrayList<String>)[groupPosition]]!![childPosition]
+                        expandableListView!!.collapseGroup(groupPosition )
+                    }
                 }
 
-                for ((index, value) in mMineUserEntity.getCountry()!!.withIndex()) {
-                    if (countryname.equals(value!!.getCountryName())){
+                for (value in mMineUserEntity.getCountry()!!) {
+                    if (countryname == value!!.getCountryName()){
                         val states= value.getState()
-                        for ((index1, value1) in states!!.withIndex()) {
+                        for (value1 in states!!) {
                             statelist.clear()
                             statelist.add(value1!!.getStateName()!!)
                             (adapter as CustomExpandableListAdapter).notifyDataSetChanged()
-                            if (statename == value1!!.getStateName()) {
+                            if (statename == value1.getStateName()) {
                                 val citys= value1.getCity()
                                 (adapter as CustomExpandableListAdapter).notifyDataSetChanged()
-                                for ((index2, value2) in citys!!.withIndex()) {
+                                for (value2 in citys!!) {
                                     citylist.clear()
                                     citylist.add(value2!!.getCityName()!!)
                                     (adapter as CustomExpandableListAdapter).notifyDataSetChanged()
-                                    if (cityname == value2!!.getCityName()) {
+                                    if (cityname == value2.getCityName()) {
                                         val icon = BitmapDescriptorFactory.fromBitmap(BitmapFactory.decodeResource(this.resources, R.mipmap.ic_location))
                                         googleMap.addMarker(
                                             MarkerOptions()
@@ -245,7 +276,7 @@ class CallBackKt<LocationsList>: Callback<LocationsList> {
     var onFailure: ((t: Throwable?) -> Unit)? = null
 
     override fun onFailure(call: Call<LocationsList>, t: Throwable) {
-        println("CHECK_RESPONSE: 3"+t.toString())
+        println("CHECK_RESPONSE: 3$t")
         onFailure?.invoke(t)
 
     }
