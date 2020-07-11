@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">Task</string>
+  <!--  <string name="api_key">9341ab30ec587d8ffc3f57480d4f7b4f</string>-->
+    <string name="api_key_map">AIzaSyAHaqC6290Jpd6z97NBJJZBgXYMrd639Og</string>
+</resources>
